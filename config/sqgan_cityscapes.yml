@@ -1,0 +1,279 @@
+model:
+  # learning_rate: 0.0001
+  base_learning_rate: 1.25e-05
+  min_learning_rate: 0.0
+  target: models.sqgan.SQGAN
+  params:
+    encoder_config:
+      target: modules.diffusionmodules.model.Encoder
+      params:
+        double_z: false
+        z_channels: 256
+        resolution: 256
+        in_channels: 3
+        out_ch: 3
+        ch: 128
+        ch_mult: [1, 1, 2, 2, 4]
+        num_res_blocks: 2
+        attn_resolutions: [16]
+        dropout: 0.0
+    encoder_semantic_config:
+      target: modules.diffusionmodules.model.Encoder_semantic
+      params:
+        double_z: false
+        z_channels: 256
+        resolution: 256
+        in_channels: 20
+        out_ch: 20
+        ch: 128
+        ch_mult: [1, 1, 2, 2, 4]
+        num_res_blocks: 2
+        attn_resolutions: [16]
+        dropout: 0.0
+    decoder_config:
+      target: modules.masked_quantization.decoder.Decoder
+      params:
+        ch: 128
+        in_ch: 256
+        out_ch: 3
+        ch_mult: [1, 1, 2, 2, 4]
+        c_channel: 19
+        num_res_blocks: 2
+        resolution: 256
+        ratio_dim: 2
+        attn_resolutions: [16]
+        dropout: 0.0
+        resamp_with_conv: true
+        give_pre_end: false
+    decoder_semantic_config:
+      target: modules.diffusionmodules.model.Decoder_semantic
+      params:
+        double_z: false
+        z_channels: 256
+        resolution: 256
+        in_channels: 256
+        ratio_dim: 2
+        out_ch: 20
+        ch: 128
+        ch_mult: [1, 1, 2, 2, 4]
+        num_res_blocks: 2
+        attn_resolutions: [16]
+        dropout: 0.0
+    masker_config:
+      target: modules.masked_quantization.masker_vanilla_refine.VanillaMasker
+      params:
+        input_token_num: 256 
+        input_dim: 256
+        ratio_dim: 2
+        patch_size: 16
+        score_pred_net_mode: 2layer
+        codebook_dim: 256
+        topk_ratio_range: [0.05, 1.]  ## the range of possible masksking fractions
+        topk_ratio_prob: log-normal ## the distribution of the masksking fraction [uniform, gaussian, custom (low==high)]
+        subdivisions: 5 # used if topk_ratio_prob is log-normal or beta
+    masker_semantic_config:
+      target: modules.masked_quantization.masker_vanilla_refine.VanillaMasker
+      params:
+        input_token_num: 256 
+        input_dim: 256
+        ratio_dim: 2
+        patch_size: 16
+        score_pred_net_mode: 2layer
+        codebook_dim: 256
+        topk_ratio_range: [0.05, 1.]  ## the range of possible masksking fractions
+        topk_ratio_prob: log-normal ## the distribution of the masksking fractions [uniform, gaussian, custom (low==high)]
+        subdivisions: 5 # used if topk_ratio_prob is log-normal or beta       
+    demasker_config:
+      target: modules.masked_quantization.demasker_vanilla.VanillaDemasker
+      params:
+        output_dim: 256
+        codebook_dim: 256
+        height_and_width: 16
+        ratio_dim: 2
+        n_layer: 8
+        mask_init_value: 0.02
+    demasker_semantic_config:
+      target: modules.masked_quantization.demasker_vanilla.VanillaDemasker
+      params:
+        output_dim: 256
+        codebook_dim: 256
+        height_and_width: 16
+        ratio_dim: 2
+        n_layer: 8
+        mask_init_value: 0.02
+    lossconfig:
+      target: modules.losses.vqperceptual.VQLPIPSWithDiscriminator
+      params:
+        disc_conditional: false
+        disc_in_channels: 3
+        disc_start: 0
+        disc_weight: 0.15
+        codebook_weight: 0.15
+        disc_weight_max: 0.20
+        perceptual_lpips_weight: 0.15
+        label_weight: 1   # multiplier of label_weights
+        label_weights: [  0.15, # road
+                          0.15, # sidewalk
+                          0.15, # building
+                          0.15, # wall
+                          0.15, # fence
+                          0.15, # pole
+                          1,    # traffic light
+                          1,    # traffic sign
+                          0,    # vegetation
+                          0.15, # terrain
+                          0,    # sky
+                          0.55, # person
+                          0.55, # rider
+                          0.15, # car
+                          0.15, # truck
+                          0.15, # bus
+                          0.15, # train
+                          0.15, # motorcycle
+                          0.15, # bicycle
+                          0.15  # null
+                        ]
+    lossconfig_semantic:
+      target: modules.losses.vqperceptual.VQLPIPSWithDiscriminator
+      params:
+        disc_conditional: false
+        disc_in_channels: 20
+        disc_start: 0
+        disc_weight: 0.75
+        codebook_weight: 1.0
+        disc_weight_max: 1.0
+        semantic_weights: [ 0.5,  # road
+                            0.5,  # sidewalk
+                            0.5,  # building
+                            0.5,  # wall
+                            0.5,  # fence
+                            0.5,  # pole
+                            1,    # traffic light
+                            1,    # traffic sign
+                            0.2,  # vegetation
+                            0.5,  # terrain
+                            0.2,  # sky
+                            0.85, # person
+                            0.85, # rider
+                            0.5,  # car
+                            0.5,  # truck
+                            0.5,  # bus
+                            0.5,  # train
+                            0.5,  # motorcycle
+                            0.5,  # bicycle
+                            0.5   # null
+                          ]
+    vqconfig:
+      target: modules.vector_quantization.quantize2.VectorQuantize2
+      params:
+        codebook_size: 1024
+        codebook_dim: 256
+        channel_last: false
+        accept_image_fmap: false
+        commitment_beta: 0.25
+        decay: 0.99
+        restart_unused_codes: true
+        commit_loss_legacy: true
+    vqconfig_semantic:
+      target: modules.vector_quantization.quantize2.VectorQuantize2
+      params:
+        codebook_size: 1024
+        codebook_dim: 256
+        channel_last: false
+        accept_image_fmap: false
+        commitment_beta: 0.25
+        decay: 0.99
+        restart_unused_codes: true
+        commit_loss_legacy: true
+    monitor: val_rec_loss
+    warmup_epochs: 0.1
+    scheduler_type: linear-warmup_cosine-decay
+data:
+  target: data.build.DataModuleFromConfig
+  params:
+    batch_size: 1 # 30
+    num_workers: 8
+    train:
+      target: data.cityscapes.CityscapesTrain
+      params:
+        config:
+          is_eval: False
+          size: 256
+          ratio_dim: 2
+          relevant_obj: [ # set the value to 1 to increase the presence of that particular obj
+                          0, # road
+                          0, # sidewalk
+                          0, # building
+                          0, # wall
+                          0, # fence
+                          0, # pole
+                          1, # traffic light
+                          1, # traffic sign
+                          0, # vegetation
+                          0, # terrain
+                          0, # sky
+                          0, # person
+                          0, # rider
+                          0, # car
+                          0, # truck
+                          0, # bus
+                          0, # train
+                          0, # motorcycle
+                          0, # bicycle
+                      ]
+    validation:
+      target: data.cityscapes.CityscapesValidation
+      params:
+        config:
+          is_eval: True
+          size: 256
+          ratio_dim: 2
+          relevant_obj: [ # set the value to 1 to increase the presence of that particular obj
+                          0, # road
+                          0, # sidewalk
+                          0, # building
+                          0, # wall
+                          0, # fence
+                          0, # pole
+                          1, # traffic light
+                          1, # traffic sign
+                          0, # vegetation
+                          0, # terrain
+                          0, # sky
+                          0, # person
+                          0, # rider
+                          0, # car
+                          0, # truck
+                          0, # bus
+                          0, # train
+                          0, # motorcycle
+                          0, # bicycle
+                      ]
+    test:
+      target: data.cityscapes.CityscapesValidation
+      params:
+        config:
+          is_eval: True
+          size: 256
+          ratio_dim: 2
+          relevant_obj: [ # set the value to 1 to increase the presence of that particular obj
+                          0, # road
+                          0, # sidewalk
+                          0, # building
+                          0, # wall
+                          0, # fence
+                          0, # pole
+                          0, # traffic light
+                          0, # traffic sign
+                          0, # vegetation
+                          0, # terrain
+                          0, # sky
+                          0, # person
+                          0, # rider
+                          0, # car
+                          0, # truck
+                          0, # bus
+                          0, # train
+                          0, # motorcycle
+                          0, # bicycle
+                      ]
