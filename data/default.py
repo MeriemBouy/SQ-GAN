@@ -5,4 +5,4 @@ DefaultDataPath = edict()
 DefaultDataPath.Cityscapes = edict()
 
 
-DefaultDataPath.Cityscapes.root = "path/to/cityscapes"
+DefaultDataPath.Cityscapes.root = "/content/SQ-GAN/SPADE/datasets/cityscapes"
