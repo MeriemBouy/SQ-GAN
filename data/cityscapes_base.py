@@ -125,6 +125,7 @@ class ImagePaths(Dataset):
             ssm = self.transform_label_val(ssm)
 
         ssm = torch.tensor(np.array(ssm*255), dtype=torch.long)
+        ssm[ssm == 255] = 19
         label_ = self.label_transform(ssm).squeeze(0)
         ssm = self.semantic_transform(ssm)
         _,h,w = ssm.shape
