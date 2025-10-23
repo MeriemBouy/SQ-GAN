@@ -13,7 +13,7 @@ import evaluate.metric_functions as mfunc  # Import the custom metric functions
 from omegaconf import OmegaConf
 from utils.utils import instantiate_from_config
 
-internimage_path = "/home/pezone/InternImage"  # Adjust as needed
+internimage_path = "/kaggle/working/InternImage"
 
 
 # Function to load the model
