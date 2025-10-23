@@ -48,7 +48,7 @@ class CityscapesValidation(CityscapesBase):
         
 if __name__ == "__main__":
     config = {"is_eval": False, "size": 256, "ratio_dim": 1.0}
-    root = "path_to_cityscapes_dataset"
+    root = "datasets/cityscapes"
     
     train_dataset = CityscapesTrain(root=root, config=config)
     val_dataset = CityscapesValidation(root=root, config=config)
