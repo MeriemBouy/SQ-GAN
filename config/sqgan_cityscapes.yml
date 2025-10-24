@@ -192,7 +192,7 @@ data:
   target: data.build.DataModuleFromConfig
   params:
     batch_size: 1 # 30
-    num_workers: 8
+    num_workers: 4
     train:
       target: data.cityscapes.CityscapesTrain
       params:
